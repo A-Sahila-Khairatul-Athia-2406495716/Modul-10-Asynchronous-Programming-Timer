@@ -16,3 +16,20 @@ Jadi urutan eksekusinya adalah:
    - print `howdy!`
    - tunggu 2 detik (TimerFuture)
    - print `done!`
+
+
+## Experiment 1.3: Multiple Spawn and removing drop
+
+### Output dengan Multiple Spawn
+![Experiment 1.3 1](assets/images/1_3_1.png)
+
+### Output setelah drop(spawner) dihapus
+![Experiment 1.3 1](assets/images/1_3_2.png)
+
+### Explanation
+
+**Spawner** mengirim task ke dalam channel yang dibaca oleh Executor. **Executor** mengambil task dari channel dan menjalankannya (poll). **drop(spawner)** menutup sisi pengirim channel, sehingga Executor tahu bahwa tidak akan ada task baru lagi.
+
+Dengan multiple spawn, ketiga task dijalankan secara concurrent oleh satu executor. Semua `howdy` muncul lebih dulu karena ketiga task langsung dieksekusi sampai titik `.await` (TimerFuture). Saat menunggu timer, executor beralih ke task berikutnya. Setelah ~2 detik, semua timer selesai dan ketiga `done` muncul hampir bersamaan.
+
+Ketika `drop(spawner)` dihapus, channel pengirim tidak pernah ditutup. `executor.run()` menggunakan `ready_queue.recv()` yang akan block selamanya menunggu task baru yang tidak akan datang, sehingga program tidak bisa exit.
